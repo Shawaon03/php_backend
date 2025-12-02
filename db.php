@@ -1,13 +1,14 @@
 <?php
 $host = getenv("DB_HOST");
-$user = getenv("DB_USER");
-$pass = getenv("DB_PASS");
 $dbname = getenv("DB_NAME");
+$username = getenv("DB_USER");
+$password = getenv("DB_PASS");
 $port = getenv("DB_PORT");
 
-$conn = new mysqli($host, $user, $pass, $dbname, $port);
-
-if ($conn->connect_error) {
-    die("Database connection failed: " . $conn->connect_error);
+try {
+    $conn = new PDO("mysql:host=$host;port=$port;dbname=$dbname", $username, $password);
+    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch (PDOException $e) {
+    die("Connection failed: " . $e->getMessage());
 }
 ?>
