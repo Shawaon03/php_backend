@@ -1,14 +1,29 @@
-<?php<?php
-require "db.php";
-
-echo "Database Connected Successfully!";
-?>
-
+<?php
 header("Access-Control-Allow-Origin: *");
-header("Content-Type: application/json");
+header("Access-Control-Allow-Methods: POST");
+header("Access-Control-Allow-Headers: Content-Type");
+header('Content-Type: application/json');
 
-require "db.php";
+// Load DB credentials (from Render Environment Variables)
+$host = getenv("DB_HOST");
+$db   = getenv("DB_NAME");
+$user = getenv("DB_USER");
+$pass = getenv("DB_PASS");
+$port = getenv("DB_PORT");
 
+// Connect to MySQL
+$conn = new mysqli($host, $user, $pass, $db, $port);
+
+if ($conn->connect_error) {
+    echo json_encode([
+        "status" => "error",
+        "message" => "Database connection failed",
+        "error" => $conn->connect_error
+    ]);
+    exit;
+}
+
+// Read POST data
 $data = json_decode(file_get_contents("php://input"), true);
 
 $name    = $data["name"] ?? "";
@@ -16,21 +31,22 @@ $email   = $data["email"] ?? "";
 $phone   = $data["phone"] ?? "";
 $message = $data["message"] ?? "";
 
-if (!$email || !$message) {
-    echo json_encode(["error" => "Email & message required"]);
+// Validate
+if (!$name || !$email || !$phone || !$message) {
+    echo json_encode(["status" => "error", "message" => "All fields required"]);
     exit;
 }
 
-$stmt = $conn->prepare("INSERT INTO contacts (name, email, phone, message) VALUES (?, ?, ?, ?)");
+// Insert into database
+$stmt = $conn->prepare("INSERT INTO contact_messages (name, email, phone, message) VALUES (?, ?, ?, ?)");
 $stmt->bind_param("ssss", $name, $email, $phone, $message);
-$stmt->execute();
 
-$id = $stmt->insert_id;
+if ($stmt->execute()) {
+    echo json_encode(["status" => "success", "message" => "Message saved successfully"]);
+} else {
+    echo json_encode(["status" => "error", "message" => "Database insert failed"]);
+}
 
-$to = getenv("NOTIFY_EMAIL");
-$subject = "New Contact Message - $email";
-$body = "Name: $name\nEmail: $email\nPhone: $phone\n\n$message";
-mail($to, $subject, $body);
-
-echo json_encode(["ok" => true, "id": $id]);
+$stmt->close();
+$conn->close();
 ?>
