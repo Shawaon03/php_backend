@@ -1,7 +1,9 @@
 services:
   - type: web
     name: php-backend
-    env: php
-    buildCommand: ""
-    startCommand: ""
+    env: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
     rootDir: .
+    autoDeploy: true
+
