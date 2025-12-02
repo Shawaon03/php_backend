@@ -1,4 +1,9 @@
-<?php
+<?php<?php
+require "db.php";
+
+echo "Database Connected Successfully!";
+?>
+
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json");
 
