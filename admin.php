@@ -1,39 +1,67 @@
 <?php
-header("Content-Type: application/json");
 header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: POST");
-header("Access-Control-Allow-Headers: Content-Type");
 
-// Allow only POST request
-if ($_SERVER["REQUEST_METHOD"] !== "POST") {
-    echo json_encode(["status" => "error", "message" => "Only POST allowed"]);
-    exit;
+// Load environment variables for Clever Cloud DB
+$host = getenv("DB_HOST");
+$db   = getenv("DB_NAME");
+$user = getenv("DB_USER");
+$pass = getenv("DB_PASS");
+$port = getenv("DB_PORT");
+
+// Connect database
+$conn = new mysqli($host, $user, $pass, $db, $port);
+
+if ($conn->connect_error) {
+    die("Database connection failed: " . $conn->connect_error);
 }
 
-$data = json_decode(file_get_contents("php://input"), true);
+// Fetch all messages
+$sql = "SELECT * FROM contacts ORDER BY id DESC";
+$result = $conn->query($sql);
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Admin Panel – Messages</title>
+<style>
+    body { font-family: Arial; padding: 20px; background: #f4f4f4; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; background: #fff; }
+    th, td { padding: 12px; border: 1px solid #ddd; }
+    th { background: #222; color: #fff; }
+</style>
+</head>
+<body>
 
-if (!$data) {
-    echo json_encode(["status" => "error", "message" => "Invalid JSON"]);
-    exit;
-}
+<h2>📩 All Contact Messages</h2>
 
-require "db.php";
+<table>
+    <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Phone</th>
+        <th>Message</th>
+        <th>Time</th>
+    </tr>
 
-// Safe data extraction
-$name = $data["name"] ?? "";
-$email = $data["email"] ?? "";
-$phone = $data["phone"] ?? "";
-$message = $data["message"] ?? "";
+    <?php if ($result->num_rows > 0): ?>
+        <?php while($row = $result->fetch_assoc()): ?>
+            <tr>
+                <td><?= $row['id'] ?></td>
+                <td><?= htmlspecialchars($row['name']) ?></td>
+                <td><?= htmlspecialchars($row['email']) ?></td>
+                <td><?= htmlspecialchars($row['phone']) ?></td>
+                <td><?= htmlspecialchars($row['message']) ?></td>
+                <td><?= $row['created_at'] ?></td>
+            </tr>
+        <?php endwhile; ?>
+    <?php else: ?>
+        <tr><td colspan="6">No messages found</td></tr>
+    <?php endif; ?>
+</table>
 
-$sql = "INSERT INTO contacts (name, email, phone, message) VALUES (?, ?, ?, ?)";
-$stmt = $conn->prepare($sql);
-$stmt->bind_param("ssss", $name, $email, $phone, $message);
+</body>
+</html>
 
-if ($stmt->execute()) {
-    echo json_encode(["status" => "success", "message" => "Message saved!"]);
-} else {
-    echo json_encode(["status" => "error", "message" => "Database error"]);
-}
-
-$stmt->close();
-$conn->close();
+<?php $conn->close(); ?>
