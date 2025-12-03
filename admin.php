@@ -1,75 +1,55 @@
 <?php
 require "db.php";
 
-// Optional simple password protect
-$admin_password = "12345";  // <-- চাইলে বদলায় নিতে পারবেন
+// Simple password protection
+$admin_password = "shawaon123"; // Change this
 
-if (!isset($_GET["pass"]) || $_GET["pass"] !== $admin_password) {
-    die("<h2>Access Denied</h2> <p>You must enter correct admin password.</p>");
+// If password form submitted
+if (isset($_POST["password"])) {
+    if ($_POST["password"] === $admin_password) {
+        setcookie("admin_login", "1", time() + 3600);
+        header("Location: admin.php");
+        exit;
+    } else {
+        $error = "Wrong password!";
+    }
+}
+
+// If not logged in
+if (!isset($_COOKIE["admin_login"])) {
+    echo '<form method="POST" style="max-width:300px;margin:100px auto;font-family:sans-serif;">
+            <h2>Admin Login</h2>
+            <input type="password" name="password" placeholder="Enter Password" style="width:100%;padding:10px;margin:10px 0;">
+            <button style="padding:10px 20px;">Login</button>
+            <p style="color:red;">'.($error ?? "").'</p>
+          </form>';
+    exit;
 }
 
 // Fetch messages
-$result = $conn->query("SELECT * FROM contact_messages ORDER BY created_at DESC");
+$result = $conn->query("SELECT * FROM contact_messages ORDER BY id DESC");
+
+echo "<h1 style='font-family:sans-serif;text-align:center;'>Contact Messages</h1>";
+echo "<table border='1' cellpadding='10' style='width:90%;margin:auto;font-family:sans-serif;border-collapse:collapse;'>
+        <tr style='background:#222;color:#fff;'>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Message</th>
+            <th>Date</th>
+        </tr>";
+
+while ($row = $result->fetch_assoc()) {
+    echo "<tr>
+            <td>{$row['id']}</td>
+            <td>{$row['name']}</td>
+            <td>{$row['email']}</td>
+            <td>{$row['phone']}</td>
+            <td>{$row['message']}</td>
+            <td>{$row['created_at']}</td>
+          </tr>";
+}
+
+echo "</table>";
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>Admin Panel - Messages</title>
-<style>
-body {
-    font-family: Arial, sans-serif;
-    padding: 20px;
-    background: #f5f6fa;
-}
-h2 {
-    margin-bottom: 20px;
-}
-table {
-    width: 100%;
-    border-collapse: collapse;
-    background: white;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
-}
-table th, table td {
-    padding: 12px;
-    border-bottom: 1px solid #ddd;
-}
-table th {
-    background: #2C3E50;
-    color: white;
-}
-tr:hover {
-    background: #f1f1f1;
-}
-</style>
-</head>
-<body>
-
-<h2>📩 All Contact Messages</h2>
-
-<table>
-    <tr>
-        <th>ID</th>
-        <th>Name</th>
-        <th>Email</th>
-        <th>Phone</th>
-        <th>Message</th>
-        <th>Time</th>
-    </tr>
-
-    <?php while($row = $result->fetch_assoc()): ?>
-    <tr>
-        <td><?= $row["id"] ?></td>
-        <td><?= htmlspecialchars($row["name"]) ?></td>
-        <td><?= htmlspecialchars($row["email"]) ?></td>
-        <td><?= htmlspecialchars($row["phone"]) ?></td>
-        <td><?= nl2br(htmlspecialchars($row["message"])) ?></td>
-        <td><?= $row["created_at"] ?></td>
-    </tr>
-    <?php endwhile; ?>
-
-</table>
-
-</body>
-</html>
