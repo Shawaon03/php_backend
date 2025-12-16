@@ -25,7 +25,7 @@ if ($stmt->execute()) {
     // =====================
     // EMAIL SEND
     // =====================
-    $to = "yourmail@gmail.com";   // <-- এখানে আপনার email দিন
+    $to = "shawaonahmed@gmail.com";  
     $subject = "New Contact Message - Portfolio";
 
     $body = "You have received a new message:\n\n"
